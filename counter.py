@@ -2,6 +2,9 @@ import requests
 import json
 import time
 
+#设置储存60次数据，约10分钟
+STORAGE = 60
+
 
 def get_info(uid):
     # 获取API的数据
@@ -26,7 +29,7 @@ if __name__ == "__main__":
     has_dropped = 0
     drop_time = []
     # 初始化数组，设定一个100位数组
-    for i in range(0, 100):
+    for i in range(STORAGE):
         drop_time.append(0)
     # 设置初始指针
     pointer = 0
@@ -51,9 +54,9 @@ if __name__ == "__main__":
         # 设置刷新时间，以保证数据为最新的100份
         drop_time[pointer] = dropped
         # 设置指针
-        if pointer == 99:
+        if pointer == STORAGE - 1:
             pointer = 0
-            timeused = 100
+            timeused = STORAGE
         else:
             pointer += 1
         has_dropped += dropped
@@ -61,16 +64,21 @@ if __name__ == "__main__":
 
         # 防止drop_time之和为0
         try:
-            if timeused == 100:
+            if timeused == STORAGE:
                 time_left = ((fans - target * 100000) // (sum(drop_time) / timeused / 10))  # 计算获得100份数据剩余掉粉时间
             else:
                 time_left = ((fans - target * 100000) // (sum(drop_time) / pointer / 10))  # 计算获得小于100份数据时剩余的掉粉时间
         except Exception:
             time_left = 0
 
-        output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
-                 + str(fans) + " | 距上次后掉粉数量：" + str(dropped) + " | 总计已掉粉：" + str(has_dropped) \
-                 + " | 预计掉粉至" + str(target) + "0w剩余时间："
+        if dropped >= 0:
+            output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
+                     + str(fans) + " | 粉丝减少：" + str(dropped) + " | 总计已掉粉：" + str(has_dropped) \
+                     + " | 预计掉粉至" + str(target) + "0w剩余时间："
+        else:
+            output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
+                     + str(fans) + " | 粉丝增加：" + str(-dropped) + " | 总计已掉粉：" + str(has_dropped) \
+                     + " | 预计掉粉至" + str(target) + "0w剩余时间："
 
         # 设置输出剩余时间形式以方便阅读
         if time_left < 60:
@@ -83,6 +91,11 @@ if __name__ == "__main__":
             output = output + str(int(time_left / 8640) / 10) + "d"
 
         # 输出
+        print(output)
+
+        output = ''
+        for i in range(110):
+            output = output + '-'
         print(output)
         # 将获得的粉丝数量设定为上次的
         last_fan = fans
