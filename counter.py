@@ -8,9 +8,6 @@ from colorama import Fore, Back, Style, init
 
 init(autoreset=True)
 
-# 设置储存60次数据，约10分钟
-STORAGE = 60
-
 
 def get_info(uid):
     # 获取API的数据
@@ -35,6 +32,8 @@ if __name__ == "__main__":
     has_dropped = 0
     drop_time = {}
     keys = []
+    # 初始设置数组长度为60
+    storage = 60
 
     while True:
         info = get_info(uid)
@@ -52,7 +51,7 @@ if __name__ == "__main__":
 
         has_dropped += dropped
 
-        if len(drop_time) == STORAGE:
+        while len(drop_time) >= storage:
             keys = list(drop_time.keys())
             del drop_time[keys[0]]
         drop_time[time.time()] = dropped
@@ -63,9 +62,9 @@ if __name__ == "__main__":
 
         # 防止drop_time之和为0
         try:
-            time_left = (fans - target * 100000)//(sum(drop_time)/(keys[len(keys) - 1] - keys[0]))
+            time_left = (fans - target * 100000) // (sum(drop_time) / (keys[len(keys) - 1] - keys[0]))
         except Exception:
-            time_left = 0
+            time_left = 2592000
 
         if dropped >= 0:
             output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
@@ -73,18 +72,28 @@ if __name__ == "__main__":
                      + " | 预计掉粉至" + str(target) + "0w剩余时间："
         else:
             output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
-                     + str(fans) + " | 粉丝" + Fore.BLACK + Back.LIGHTYELLOW_EX + '增加' + Style.RESET_ALL + "："\
+                     + str(fans) + " | 粉丝" + Fore.BLACK + Back.LIGHTYELLOW_EX + '增加' + Style.RESET_ALL + "：" \
                      + str(-dropped) + " | 总计已掉粉：" + str(has_dropped) + " | 预计掉粉至" + str(target) + "0w剩余时间："
 
         # 设置输出剩余时间形式以方便阅读
+        # 动态调整数组长度以保证数据准确性
         if time_left < 60:
             output = output + str(time_left) + "s"
         elif time_left < 3600:
+            # 剩余时间少于一小时时仅保存最后10个数据
             output = output + str(int(time_left / 6) / 10) + "m"
+            storage = 10
         elif time_left < 86400:
+            # 剩余时间小于一天时，仅保存60个数据
             output = output + str(int(time_left / 360) / 10) + "h"
-        else:
+            storage = 60
+        elif time_left < 2592000:
+            # 剩余时间大于一天时，保存3600个数据
             output = output + str(int(time_left / 8640) / 10) + "d"
+            storage = 3600
+        else:
+            # 如果超过一个月（此处以30天计算）输出‘>1m’
+            output = output + '>30d'
 
         # 输出
         print(output)
