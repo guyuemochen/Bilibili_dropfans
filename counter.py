@@ -18,14 +18,6 @@ def get_info(uid):
     return info
 
 
-def sum(list):
-    # 统计列表中所有数据之和
-    sumall = 0
-    for i in list:
-        sumall += list[i]
-    return sumall
-
-
 if __name__ == "__main__":
     uid = 777536  # B站uid，此处以LexBurner为例
     last_fan = 0  # 上次统计的粉丝数据
@@ -35,16 +27,37 @@ if __name__ == "__main__":
     # 初始设置数组长度为60
     storage = 60
 
+    # 进行初次数据采集
+    info = get_info(uid)
+    # 获得up名称以及粉丝数量，并转换成对应类型
+    fans = int(info['data']['card']['fans'])
+    name = info['data']['card']['name']
+    path = 'last_time_data.txt'
+    try:
+        file = open(path)
+        read = file.read()
+        if read is not None:
+            list1 = read.split(' ')
+            drop_time[float(list1[0])] = int(list1[1])
+            last_fan = int(list1[1])
+            has_dropped = int(list1[2])
+        else:
+            last_fan = int(fans)
+        file.close()
+    except Exception as e:
+        print(e)
+    file = open(path, mode='w')
+    write = str(time.time()) + " " + str(fans) + " " + str(has_dropped + last_fan - fans)
+    file.writelines(write)
+    file.close()
+
+
     while True:
         info = get_info(uid)
 
         # 获得up名称以及粉丝数量，并转换成对应类型
         fans = int(info['data']['card']['fans'])
         name = info['data']['card']['name']
-
-        # 为初始数据进行设置
-        if last_fan == 0:
-            last_fan = int(fans)
 
         # 获取这次计算后掉粉数量
         dropped = last_fan - fans
@@ -54,7 +67,7 @@ if __name__ == "__main__":
         while len(drop_time) >= storage:
             keys = list(drop_time.keys())
             del drop_time[keys[0]]
-        drop_time[time.time()] = dropped
+        drop_time[time.time()] = int(fans)
 
         keys = list(drop_time.keys())
 
@@ -62,7 +75,7 @@ if __name__ == "__main__":
 
         # 防止drop_time之和为0
         try:
-            time_left = (fans - target * 100000) // (sum(drop_time) / (keys[len(keys) - 1] - keys[0]))
+            time_left = (fans - target * 100000) // ((drop_time[keys[0]] - drop_time[keys[len(keys) - 1]]) / (keys[len(keys) - 1] - keys[0]))
         except Exception:
             time_left = 2592000
 
