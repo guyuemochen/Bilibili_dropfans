@@ -46,8 +46,12 @@ if __name__ == "__main__":
         file.close()
     except Exception as e:
         print(e)
+        last_fan = fans
     file = open(path, mode='w')
-    write = str(time.time()) + " " + str(fans) + " " + str(has_dropped + last_fan - fans)
+    if has_dropped + last_fan - fans >= 0:
+        write = str(time.time()) + " " + str(fans) + " " + str(has_dropped + last_fan - fans)
+    else:
+        write = str(time.time()) + " " + str(fans) + " " + str(0)
     file.writelines(write)
     file.close()
 
@@ -78,6 +82,9 @@ if __name__ == "__main__":
             time_left = (fans - target * 100000) // ((drop_time[keys[0]] - drop_time[keys[len(keys) - 1]]) / (keys[len(keys) - 1] - keys[0]))
         except Exception:
             time_left = 2592000
+
+        if has_dropped < 0:
+            has_dropped = 0
 
         if dropped >= 0:
             output = str(time.strftime("%b %d %H:%M:%S", time.localtime())) + " | " + name + " | 当前粉丝数：" \
